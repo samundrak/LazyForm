@@ -1,0 +1,18 @@
+{
+  "name": "colmus",
+  "description": "Music Station App",
+  "main": "app.js",
+  "authors": [
+    "samundrak <samundrak@yahoo.com>"
+  ],
+  "license": "MIT",
+  "moduleType": [],
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
