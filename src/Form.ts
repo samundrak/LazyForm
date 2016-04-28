@@ -1,7 +1,11 @@
+Array.prototype.insert = function(index, item) {
+	this.splice(index, 0, item);
+}
 class Form {
 	formOptions: any;
 	form: Element;
 	container: any;
+	replaceString: string = "$input";
 	setFormOptions(options: any): void {
 		this.formOptions = options;
 	}
@@ -61,7 +65,7 @@ class Form {
 					input.setAttribute(key, this.formOptions.fields.common.attr[key]);
 				}
 			}
-			template = item.attr.hasOwnProperty('template') ? item.attr.template : this.formOptions.fields.common.hasOwnProperty('template') ? this.formOptions.fields.common.template : '{{input}}';
+			template = item.attr.hasOwnProperty('template') ? item.attr.template : this.formOptions.fields.common.hasOwnProperty('template') ? this.formOptions.fields.common.template : this.replaceString;
 		}
 		for (var key in item.attr) {
 			input.setAttribute(key, item.attr[key]);
@@ -82,7 +86,7 @@ class Form {
 						var tempElement = document.createElement('temp');
 						var field = this.createFields('input', item);
 						tempElement.appendChild(field.input);
-						var changedItem = field.template.replace('{{input}}', tempElement.innerHTML); 
+						var changedItem = field.template.replace(this.replaceString, tempElement.innerHTML); 
 							if(item.attr.type == 'submit' || item.attr.type === 'Submit'){
 								submitButton = changedItem;
 							}else{
@@ -103,21 +107,44 @@ class Form {
 							 field.input.appendChild(tempOption);
 						 });
 						 tempElement.appendChild(field.input);
-						var changedItem = field.template.replace('{{input}}', tempElement.innerHTML); 
+						 var changedItem = field.template.replace(this.replaceString, tempElement.innerHTML); 
 						childElements.push({ index: item.rank || -1, data : changedItem });
 
 					 });
 					break;
+				case 'checkbox':
 				case 'radio':
 				this.formOptions.fields.fields[key].forEach((item:any)=>{
-
+					var radios: any[] = [];
+					var masterKey:string = key;
+					var tempRadioButtonHolder: Element = document.createElement('temp');
+							item.fields.forEach((radio:any)=>{
+								var tempElement = document.createElement('temp');
+								var field = document.createElement('input');
+								field.setAttribute('type', masterKey);
+									if(item.name) field.setAttribute('name', item.name||'');
+									if(item.class) field.setAttribute('class', item.class );
+								for(var key in radio){
+									field.setAttribute(key, radio[key]);
+								}
+								// tempElement.appendChild(field);
+								tempRadioButtonHolder.appendChild(field);
+								// radios.push(tempElement.innerHTML);
+							});
+							var template = item.template ? item.template : this.formOptions.fields.common.hasOwnProperty('template') ? this.formOptions.fields.common.template : this.replaceString;
+							var changedItem = template.replace(this.replaceString, tempRadioButtonHolder.innerHTML);
+							childElements.push({ index: item.rank || -1, data: changedItem });
 				});
 					break;
 			}
 		}
+		var sortedChildElements = [];
 		childElements.forEach((item:any)=>{
-			console.log(item.index)
-			this.form.innerHTML = this.form.innerHTML + item.data;
+			var index = item.index < 0 ? childElements.length  : item.index; 
+			sortedChildElements.insert(index,item.data);
+		});
+		sortedChildElements.forEach((item:any)=>{
+			this.form.innerHTML = this.form.innerHTML + item;
 		});
 		this.form.innerHTML = this.form.innerHTML + submitButton;
 	}
