@@ -14,7 +14,10 @@ class Form {
 	}
 
 	getRawHTML = ():string => this.$container.innerHTML;
-	
+	setInputValue(key: string, value: string):void{
+		if (this.$inputFieldsName.indexOf(key) === -1) return;
+		document.forms[this.$name][key].value = value;
+	}	
 	getInputValue(key:string):string{
 		if(this.$inputFieldsName.indexOf(key) === -1) {
 			console.warn("This key("+key+") is not available");
@@ -165,13 +168,24 @@ class Form {
 									if(item.name) field.setAttribute('name', item.name||'');
 									if(item.class) field.setAttribute('class', item.class );
 								for(var key in radio){
-									field.setAttribute(key, radio[key]);
+									if(key != 'text')
+										field.setAttribute(key, radio[key]);
 								}
 								// tempElement.appendChild(field);
 								tempRadioButtonHolder.appendChild(field);
+								if(radio.text){
+									var tempDiv = document.createElement('span');
+									tempDiv.innerHTML = radio.text;
+									tempRadioButtonHolder.appendChild(tempDiv);
+								}else{
+									var tempDiv = document.createElement('span');
+									tempDiv.innerHTML = radio.value;
+									tempRadioButtonHolder.appendChild(tempDiv);
+
+								}
 								// radios.push(tempElement.innerHTML);
 							});
-							var template = item.template ? item.template : this.$formOptions.fields.common.hasOwnProperty('template') ? this.$formOptions.fields.common.template : this.this.$replaceString;
+							var template = item.template ? item.template : this.$formOptions.fields.common.hasOwnProperty('template') ? this.$formOptions.fields.common.template : this.$replaceString;
 							var changedItem = template.replace(this.$replaceString, tempRadioButtonHolder.innerHTML);
 							childElements.push({ index: item.rank || -1, data: changedItem });
 				});
