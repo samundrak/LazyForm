@@ -1,4 +1,5 @@
 # LazyForm
+Documentation will be available SOON!!
 Dynamic Form builder
   ```
   var loginForm = {
