@@ -86,9 +86,6 @@ class Form {
 				tagName[0].appendChild(form);
 			};
 		}
-
-		console.log(form)
-
 	}
 
 	private createFields(tagName:string,item:any):any{
@@ -112,6 +109,19 @@ class Form {
 		}
 		return {input:input,template:template};
 	}
+	private createElements(arrayOfElements){
+		var tempDiv = document.createElement('div');
+		arrayOfElements.forEach(item=>{
+			var element = document.createElement(item.element || 'div');
+			for(var key in item.attr){
+				element.setAttribute(key, item.attr[key]);
+			}
+			element.innerHTML = item.value;
+			tempDiv.appendChild(element);
+		});
+
+		return tempDiv;
+	}
 	private buildChilds():void {
 		if (!this.$formOptions.hasOwnProperty('fields')) return;
 		if (!this.$formOptions.fields.hasOwnProperty('fields')) return;
@@ -120,12 +130,15 @@ class Form {
 		for (var key in this.$formOptions.fields.fields) {
 			// var field = document.createElement("input");
 			switch (key) {
+				case 'textarea':
 				case 'input':
 					this.$formOptions.fields.fields[key].forEach((item: any) => {
 						if (Array.isArray(item.attr)) return;
 						var tempElement = document.createElement('temp');
-						var field = this.createFields('input', item);
+						var field = this.createFields(key, item);
+						if(item.before) tempElement.appendChild(this.createElements(item.before));
 						tempElement.appendChild(field.input);
+						if(item.after) tempElement.appendChild(this.createElements(item.after));
 						var changedItem = field.template.replace(this.$replaceString, tempElement.innerHTML); 
 							if(item.attr.type == 'submit' || item.attr.type === 'Submit'){
 								submitButton = changedItem;
@@ -146,7 +159,9 @@ class Form {
 							 }
 							 field.input.appendChild(tempOption);
 						 });
+						 if(item.before)tempElement.appendChild(this.createElements(item.before));
 						 tempElement.appendChild(field.input);
+						 if(item.after) tempElement.appendChild(this.createElements(item.after));
 						 var changedItem = field.template.replace(this.$replaceString, tempElement.innerHTML); 
 						childElements.push({ index: item.rank || -1, data : changedItem });
 
@@ -161,6 +176,7 @@ class Form {
 						this.$inputFieldsName.push(item.name);
 					}
 					var tempRadioButtonHolder: Element = document.createElement('temp');
+					if (item.before) tempRadioButtonHolder.appendChild(this.createElements(item.before));
 							item.fields.forEach((radio:any)=>{
 								var tempElement = document.createElement('temp');
 								var field = document.createElement('input');
@@ -185,6 +201,8 @@ class Form {
 								}
 								// radios.push(tempElement.innerHTML);
 							});
+
+					if (item.after) tempRadioButtonHolder.appendChild(this.createElements(item.after));
 							var template = item.template ? item.template : this.$formOptions.fields.common.hasOwnProperty('template') ? this.$formOptions.fields.common.template : this.$replaceString;
 							var changedItem = template.replace(this.$replaceString, tempRadioButtonHolder.innerHTML);
 							childElements.push({ index: item.rank || -1, data: changedItem });
@@ -192,13 +210,20 @@ class Form {
 					break;
 			}
 		}
-		var sortedChildElements:any = [];
-		childElements.forEach((item:any)=>{
-			var index = item.index < 0 ? childElements.length  : item.index; 
-			sortedChildElements.insert(index,item.data);
-		});
-		sortedChildElements.forEach((item:any)=>{
-			this.$form.innerHTML = this.$form.innerHTML + item;
+		// childElements.forEach((item:any,i:number)=>{
+			// console.log(i + "=> " + item.index);
+			// var index = !item.index  ? 	childElements.length - 1  : item.index; 
+			// sortedChildElements.insert(index,item.data);
+		// });
+		// console.log(sorter(childElements));
+		// sortedChildElements.forEach((item:any)=>{
+		// 	this.$form.innerHTML = this.$form.innerHTML + item;
+		// });
+		
+		var sortedChildElements: any = sorter(childElements);
+		this.$form.innerHTML = '';
+		reArrange(sortedChildElements).forEach(element=>{
+				this.$form.innerHTML = this.$form.innerHTML + element.data;
 		});
 		this.$form.innerHTML = this.$form.innerHTML + submitButton;
 	}
@@ -222,4 +247,47 @@ class Form {
 		}
 	}
 
+}
+
+function sorter(array){
+	var tempObject = {};
+	array.forEach((item,index)=>{
+		if(item.index){
+			if(tempObject.hasOwnProperty('index_'+item.index)){
+				tempObject['index_' + item.index].push({ index: item.index,data: item.data } );
+			}else{
+				tempObject['index_' + item.index] = new Array();
+				tempObject['index_' + item.index].push({index: item.index,data:item.data});
+			}
+		}else{
+				tempObject['index_' + array.length+1] = new Array();
+				tempObject['index_' + array.length+1].push({index:item.index,data:item.data});
+		}
+	});
+	return tempObject;
+}
+
+function reArrange(tempObject){
+	var sortedRanked = [];
+	for(var key in tempObject){
+		sortedRanked.push(tempObject[key][0].index);
+	}
+	sortedRanked.sort();
+	var sortedElements = [];
+	var isUnrankedIndex = false;
+	sortedRanked.forEach(item	=>	{
+		if(item != -1){
+			tempObject['index_' + item].forEach( elements=>{
+				sortedElements.push(elements);
+			})
+		}else{
+			isUnrankedIndex = true;
+		}
+	});
+	if(isUnrankedIndex){
+		tempObject['index_-1'].forEach(item=>{
+			sortedElements.push(item);
+		})
+	}
+	return sortedElements;
 }
