@@ -13,6 +13,7 @@ class Form {
 		this.$formOptions = options;
 	}
 
+	getForm = () => this.$form;
 	getRawHTML = ():string => this.$container.innerHTML;
 	setInputValue(key: string, value: string):void{
 		if (this.$inputFieldsName.indexOf(key) === -1) return;
@@ -58,6 +59,7 @@ class Form {
 		var form = this.buildForm();
 		this.placeTheForm(form);
 		this.buildChilds();
+		this.attachEvents();
 	}
 	getValue(name:string){
 		console.log()
@@ -90,7 +92,7 @@ class Form {
 
 	private createFields(tagName:string,item:any):any{
 		var input = document.createElement(tagName);
-						var template: any;
+		var template: any;
 		input.setAttribute('type', 'text');
 		if (this.$formOptions.fields.hasOwnProperty('common')) {
 			if (this.$formOptions.fields.common.attr) {
@@ -137,6 +139,7 @@ class Form {
 						var tempElement = document.createElement('temp');
 						var field = this.createFields(key, item);
 						if(item.before) tempElement.appendChild(this.createElements(item.before));
+						// console.log(field.input)
 						tempElement.appendChild(field.input);
 						if(item.after) tempElement.appendChild(this.createElements(item.after));
 						var changedItem = field.template.replace(this.$replaceString, tempElement.innerHTML); 
@@ -229,6 +232,9 @@ class Form {
 	}
 	private buildForm() {
 		var form: any = document.createElement("Form");
+		form.onfocus =  function(evt){
+			console.log(evt);
+		}
 		if (this.$formOptions === undefined) return;
 		if (this.$formOptions.hasOwnProperty('attribute')) {
 			if (typeof this.$formOptions.attribute === 'object') {
@@ -246,7 +252,41 @@ class Form {
 			form.setAttribute(key, attr[key]);
 		}
 	}
-
+	$callback = undefined;
+	attachListener(cb) {
+		this.$callback = new  cb();
+	}
+	private observer(options){
+		var ignoreKeys = [8, 37, 38, 39, 40, ,18,91,32,16, 20, 9, 27];
+		if(ignoreKeys.indexOf(options.event.keyCode) === -1){
+			if(this.$callback.hasOwnProperty(options.eventType)){
+				// delete options.eventType;
+				this.$callback[options.eventType]({
+					input: options.emitter,
+					value:options.value,
+					form:options.form,
+					event:options.event
+				});
+			}
+		}
+	}
+	private attachEvents(){
+		var events = ['onkeyup', 'onkeydown', 'onmouseover', 'onmousedown', 'onclick', 'onfocus', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmousewheel'];
+		var __this = this;
+		this.$inputFieldsName.forEach((item) => {
+			events.forEach(eventType => {
+			 document.forms[this.$name][item][eventType] = function(event){
+				 __this.observer({
+				 	 eventType,
+					 emitter: item,
+					 form: __this.$name,
+					 value: document.forms[__this.$name][item].value,
+					 event
+				 	});
+				 }
+			});
+		});
+	}
 }
 
 function sorter(array){
