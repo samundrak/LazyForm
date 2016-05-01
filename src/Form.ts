@@ -60,6 +60,10 @@ class Form {
 		this.placeTheForm(form);
 		this.buildChilds();
 		this.attachEvents();
+		document.forms[this.$name].onsubmit = function() {
+			console.log('form submitted');
+			return false;
+		}
 	}
 	getValue(name:string){
 		console.log()
@@ -111,14 +115,17 @@ class Form {
 		}
 		return {input:input,template:template};
 	}
-	private createElements(arrayOfElements){
+	private createElements(arrayOfElements:any[],customMessage:string){
 		var tempDiv = document.createElement('div');
+		if(customMessage){
+			tempDiv.style.display = 'none';
+		}
 		arrayOfElements.forEach(item=>{
 			var element = document.createElement(item.element || 'div');
 			for(var key in item.attr){
 				element.setAttribute(key, item.attr[key]);
 			}
-			element.innerHTML = item.value;
+			element.innerHTML = item.value || customMessage || '';
 			tempDiv.appendChild(element);
 		});
 
@@ -139,8 +146,12 @@ class Form {
 						var tempElement = document.createElement('temp');
 						var field = this.createFields(key, item);
 						if(item.before) tempElement.appendChild(this.createElements(item.before));
-						// console.log(field.input)
 						tempElement.appendChild(field.input);
+						if (this.$formOptions.fields.validationElement) {
+							if (item.attr.type != 'submit' && item.attr.type != 'Submit'){
+								tempElement.appendChild(this.createElements([this.$formOptions.fields.validationElement],'This Field is required'));
+							}
+						}
 						if(item.after) tempElement.appendChild(this.createElements(item.after));
 						var changedItem = field.template.replace(this.$replaceString, tempElement.innerHTML); 
 							if(item.attr.type == 'submit' || item.attr.type === 'Submit'){
@@ -164,6 +175,9 @@ class Form {
 						 });
 						 if(item.before)tempElement.appendChild(this.createElements(item.before));
 						 tempElement.appendChild(field.input);
+						 if (this.$formOptions.fields.validationElement) {
+							 tempElement.appendChild(this.createElements([this.$formOptions.fields.validationElement], 'This Field is required'));
+						 }
 						 if(item.after) tempElement.appendChild(this.createElements(item.after));
 						 var changedItem = field.template.replace(this.$replaceString, tempElement.innerHTML); 
 						childElements.push({ index: item.rank || -1, data : changedItem });
@@ -204,7 +218,9 @@ class Form {
 								}
 								// radios.push(tempElement.innerHTML);
 							});
-
+							if (this.$formOptions.fields.validationElement) {
+								tempRadioButtonHolder.appendChild(this.createElements([this.$formOptions.fields.validationElement], 'This Field is required'));
+							}
 					if (item.after) tempRadioButtonHolder.appendChild(this.createElements(item.after));
 							var template = item.template ? item.template : this.$formOptions.fields.common.hasOwnProperty('template') ? this.$formOptions.fields.common.template : this.$replaceString;
 							var changedItem = template.replace(this.$replaceString, tempRadioButtonHolder.innerHTML);
@@ -213,16 +229,6 @@ class Form {
 					break;
 			}
 		}
-		// childElements.forEach((item:any,i:number)=>{
-			// console.log(i + "=> " + item.index);
-			// var index = !item.index  ? 	childElements.length - 1  : item.index; 
-			// sortedChildElements.insert(index,item.data);
-		// });
-		// console.log(sorter(childElements));
-		// sortedChildElements.forEach((item:any)=>{
-		// 	this.$form.innerHTML = this.$form.innerHTML + item;
-		// });
-		
 		var sortedChildElements: any = sorter(childElements);
 		this.$form.innerHTML = '';
 		reArrange(sortedChildElements).forEach(element=>{
@@ -244,6 +250,7 @@ class Form {
 			}
 		}
 		this.$form = form;
+
 		return form;
 	}
 
