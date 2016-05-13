@@ -229,9 +229,9 @@ class Form {
 					break;
 			}
 		}
-		var sortedChildElements: any = sorter(childElements);
+		var sortedChildElements: any = Utils.sorter(childElements);
 		this.$form.innerHTML = '';
-		reArrange(sortedChildElements).forEach(element=>{
+		Utils.reArrange(sortedChildElements).forEach(element=>{
 				this.$form.innerHTML = this.$form.innerHTML + element.data;
 		});
 		this.$form.innerHTML = this.$form.innerHTML + submitButton;
@@ -244,7 +244,6 @@ class Form {
 		if (this.$formOptions === undefined) return;
 		if (this.$formOptions.hasOwnProperty('attribute')) {
 			if (typeof this.$formOptions.attribute === 'object') {
-				// if(this.)
 				this.setAttributes(this.$formOptions.attribute, form);
 				this.$name = this.$formOptions.attribute.name || Date.now();
 			}
@@ -259,16 +258,22 @@ class Form {
 			form.setAttribute(key, attr[key]);
 		}
 	}
+
+
 	$callback = undefined;
 	attachListener(cb) {
+		this.$inputFieldsName.forEach( item => cb.prototype[item] = new Object());
 		this.$callback = new  cb();
 	}
+
 	private observer(options){
-		var ignoreKeys = [8, 37, 38, 39, 40, ,18,91,32,16, 20, 9, 27];
+		var ignoreKeys = [8, 37, 38, 39, 40 ,18, 91, 32, 16, 20, 9, 27];
 		if(ignoreKeys.indexOf(options.event.keyCode) === -1){
-			if(this.$callback.hasOwnProperty(options.eventType)){
-				// delete options.eventType;
-				this.$callback[options.eventType]({
+			if (
+				this.$callback.__proto__.hasOwnProperty(options.emitter) 
+				&& this.$callback.__proto__[options.emitter].hasOwnProperty(options.eventType)
+				) {
+				this.$callback.__proto__[options.emitter][options.eventType]({
 					input: options.emitter,
 					value:options.value,
 					form:options.form,
@@ -294,47 +299,4 @@ class Form {
 			});
 		});
 	}
-}
-
-function sorter(array){
-	var tempObject = {};
-	array.forEach((item,index)=>{
-		if(item.index){
-			if(tempObject.hasOwnProperty('index_'+item.index)){
-				tempObject['index_' + item.index].push({ index: item.index,data: item.data } );
-			}else{
-				tempObject['index_' + item.index] = new Array();
-				tempObject['index_' + item.index].push({index: item.index,data:item.data});
-			}
-		}else{
-				tempObject['index_' + array.length+1] = new Array();
-				tempObject['index_' + array.length+1].push({index:item.index,data:item.data});
-		}
-	});
-	return tempObject;
-}
-
-function reArrange(tempObject){
-	var sortedRanked = [];
-	for(var key in tempObject){
-		sortedRanked.push(tempObject[key][0].index);
-	}
-	sortedRanked.sort();
-	var sortedElements = [];
-	var isUnrankedIndex = false;
-	sortedRanked.forEach(item	=>	{
-		if(item != -1){
-			tempObject['index_' + item].forEach( elements=>{
-				sortedElements.push(elements);
-			})
-		}else{
-			isUnrankedIndex = true;
-		}
-	});
-	if(isUnrankedIndex){
-		tempObject['index_-1'].forEach(item=>{
-			sortedElements.push(item);
-		})
-	}
-	return sortedElements;
 }
