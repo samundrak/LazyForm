@@ -5,6 +5,7 @@ class Form {
 	$formOptions: any;
 	$form: Element;
 	$container: any;
+	$validator = {};
 	$replaceString: string = "$input";
 	$submitCallback :any = undefined;
 	$name: string = undefined;
@@ -60,9 +61,26 @@ class Form {
 		this.placeTheForm(form);
 		this.buildChilds();
 		this.attachEvents();
-		document.forms[this.$name].onsubmit = function() {
-			console.log('form submitted');
-			return false;
+		document.forms[this.$name].onsubmit = event => {
+			var inputValues = {};
+			for(var key in this.$validator){
+				inputValues[key] = this.getInputValue(key);
+			}
+			var isFormPassedValidation: boolean = false;
+			for(var key in inputValues){
+				isFormPassedValidation = this.validationWatcher({
+					emitter : key,
+					value : inputValues[key],
+					event
+				});
+			}
+			if (!isFormPassedValidation) return false;
+			if(this.$formOptions.hasOwnProperty('attribute')){
+				if (this.$formOptions.attribute.hasOwnProperty('onsubmit') || this.$formOptions.attribute.hasOwnProperty('onSubmit')) {
+					eval(this.$formOptions.attribute['onsubmit'] || this.$formOptions.attribute['onSubmit']);
+				}
+			}
+			return true;
 		}
 	}
 	getValue(name:string){
@@ -115,10 +133,11 @@ class Form {
 		}
 		return {input:input,template:template};
 	}
-	private createElements(arrayOfElements:any[],customMessage:string){
+	private createElements(arrayOfElements:any[],customMessage:string,id:string){
 		var tempDiv = document.createElement('div');
 		if(customMessage){
 			tempDiv.style.display = 'none';
+			if(id)tempDiv.setAttribute('id', 'errorLabelContainer_' + id);
 		}
 		arrayOfElements.forEach(item=>{
 			var element = document.createElement(item.element || 'div');
@@ -136,6 +155,7 @@ class Form {
 		if (!this.$formOptions.fields.hasOwnProperty('fields')) return;
 		var submitButton: string;
 		var childElements: any[] = [];
+		var __this = this;
 		for (var key in this.$formOptions.fields.fields) {
 			// var field = document.createElement("input");
 			switch (key) {
@@ -149,10 +169,13 @@ class Form {
 						tempElement.appendChild(field.input);
 						if (this.$formOptions.fields.validationElement) {
 							if (item.attr.type != 'submit' && item.attr.type != 'Submit'){
-								tempElement.appendChild(this.createElements([this.$formOptions.fields.validationElement],'This Field is required'));
+								tempElement.appendChild(this.createElements([this.$formOptions.fields.validationElement], 'This Field is required', item.attr ? item.attr.name : undefined));
+							}else{
+								field.input.setAttribute('name','submit');
 							}
 						}
 						if(item.after) tempElement.appendChild(this.createElements(item.after));
+						if (item.validation) __this.$validator[item.attr.name] = item.validation;
 						var changedItem = field.template.replace(this.$replaceString, tempElement.innerHTML); 
 							if(item.attr.type == 'submit' || item.attr.type === 'Submit'){
 								submitButton = changedItem;
@@ -174,9 +197,10 @@ class Form {
 							 field.input.appendChild(tempOption);
 						 });
 						 if(item.before)tempElement.appendChild(this.createElements(item.before));
+						 if (item.validation) __this.$validator[item.attr.name] = item.validation;
 						 tempElement.appendChild(field.input);
 						 if (this.$formOptions.fields.validationElement) {
-							 tempElement.appendChild(this.createElements([this.$formOptions.fields.validationElement], 'This Field is required'));
+							 tempElement.appendChild(this.createElements([this.$formOptions.fields.validationElement], 'This Field is required', item.attr ? item.attr.name : undefined));
 						 }
 						 if(item.after) tempElement.appendChild(this.createElements(item.after));
 						 var changedItem = field.template.replace(this.$replaceString, tempElement.innerHTML); 
@@ -219,8 +243,9 @@ class Form {
 								// radios.push(tempElement.innerHTML);
 							});
 							if (this.$formOptions.fields.validationElement) {
-								tempRadioButtonHolder.appendChild(this.createElements([this.$formOptions.fields.validationElement], 'This Field is required'));
+								tempRadioButtonHolder.appendChild(this.createElements([this.$formOptions.fields.validationElement], 'This Field is required',item.attr ? item.attr.name : undefined));
 							}
+					if (item.validation) __this.$validator[item.attr.name] = item.validation;
 					if (item.after) tempRadioButtonHolder.appendChild(this.createElements(item.after));
 							var template = item.template ? item.template : this.$formOptions.fields.common.hasOwnProperty('template') ? this.$formOptions.fields.common.template : this.$replaceString;
 							var changedItem = template.replace(this.$replaceString, tempRadioButtonHolder.innerHTML);
@@ -273,6 +298,7 @@ class Form {
 				this.$callback.__proto__.hasOwnProperty(options.emitter) 
 				&& this.$callback.__proto__[options.emitter].hasOwnProperty(options.eventType)
 				) {
+				this.validationWatcher(options);
 				this.$callback.__proto__[options.emitter][options.eventType]({
 					input: options.emitter,
 					value:options.value,
@@ -282,12 +308,48 @@ class Form {
 			}
 		}
 	}
+
+	private validationWatcher(options,validationSchema = undefined,inputValue = undefined){
+		if (this.$validator.hasOwnProperty(options.emitter)) {
+			if(!validationSchema){
+				validationSchema = {};
+				validationSchema[options.emitter] = this.$validator[options.emitter];
+			}
+			
+			if(!inputValue){
+				inputValue = {};
+				inputValue[options.emitter] = options.value
+			}
+			
+			var validation = new Validator(inputValue, validationSchema);
+			var errorLabelContainer = document.getElementById("errorLabelContainer_" + options.emitter);
+			if (!validation.passes()) {
+				errorLabelContainer.style.display = 'block';
+				errorLabelContainer.firstChild.innerHTML = validation.first(options.emitter);
+				document.forms[this.$name]['submit'].disabled = true;
+				return false;
+			} else {
+				errorLabelContainer.style.display = 'none';
+				errorLabelContainer.firstChild.innerHTML = '';
+				document.forms[this.$name]['submit'].disabled = false;
+				return true;
+			}
+		}
+		return true;
+	}
 	private attachEvents(){
 		var events = ['onkeyup', 'onkeydown', 'onmouseover', 'onmousedown', 'onclick', 'onfocus', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmousewheel'];
 		var __this = this;
-		this.$inputFieldsName.forEach((item) => {
+		this.$inputFieldsName.forEach( item => {
+			document.forms[this.$name][item]['onblur'] = event => {
+				this.validationWatcher({
+					emitter:item,
+					value: document.forms[__this.$name][item].value,
+					event
+				});
+			}
 			events.forEach(eventType => {
-			 document.forms[this.$name][item][eventType] = function(event){
+			 document.forms[this.$name][item][eventType] = event => {
 				 __this.observer({
 				 	 eventType,
 					 emitter: item,
@@ -297,6 +359,7 @@ class Form {
 				 	});
 				 }
 			});
+
 		});
 	}
 }
