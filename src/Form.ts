@@ -61,6 +61,8 @@ class Form {
 		this.placeTheForm(form);
 		this.buildChilds();
 		this.attachEvents();
+		console.log(this.$name)
+		if (!this.$name) return console.error('No Form attributes has been provided');
 		document.forms[this.$name].onsubmit = event => {
 			var inputValues = {};
 			for(var key in this.$validator){
@@ -262,19 +264,16 @@ class Form {
 		this.$form.innerHTML = this.$form.innerHTML + submitButton;
 	}
 	private buildForm() {
-		var form: any = document.createElement("Form");
-		form.onfocus =  function(evt){
-			console.log(evt);
-		}
-		if (this.$formOptions === undefined) return;
+		var form: any = document.createElement("form");
+		if (this.$formOptions === undefined) return console.error("Form options are not setup");
 		if (this.$formOptions.hasOwnProperty('attribute')) {
 			if (typeof this.$formOptions.attribute === 'object') {
+				this.$name = this.$formOptions.attribute.name || "form_" + Date.now();
+				this.$formOptions.attribute['name'] = this.$name;
 				this.setAttributes(this.$formOptions.attribute, form);
-				this.$name = this.$formOptions.attribute.name || Date.now();
 			}
 		}
 		this.$form = form;
-
 		return form;
 	}
 
@@ -363,3 +362,4 @@ class Form {
 		});
 	}
 }
+alert('samundra kc ')

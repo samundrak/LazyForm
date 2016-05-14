@@ -64,6 +64,9 @@ var Form = (function () {
         this.placeTheForm(form);
         this.buildChilds();
         this.attachEvents();
+        console.log(this.$name);
+        if (!this.$name)
+            return console.error('No Form attributes has been provided');
         document.forms[this.$name].onsubmit = function (event) {
             var inputValues = {};
             for (var key in _this.$validator) {
@@ -283,16 +286,14 @@ var Form = (function () {
         this.$form.innerHTML = this.$form.innerHTML + submitButton;
     };
     Form.prototype.buildForm = function () {
-        var form = document.createElement("Form");
-        form.onfocus = function (evt) {
-            console.log(evt);
-        };
+        var form = document.createElement("form");
         if (this.$formOptions === undefined)
-            return;
+            return console.error("Form options are not setup");
         if (this.$formOptions.hasOwnProperty('attribute')) {
             if (typeof this.$formOptions.attribute === 'object') {
+                this.$name = this.$formOptions.attribute.name || "form_" + Date.now();
+                this.$formOptions.attribute['name'] = this.$name;
                 this.setAttributes(this.$formOptions.attribute, form);
-                this.$name = this.$formOptions.attribute.name || Date.now();
             }
         }
         this.$form = form;
@@ -378,3 +379,4 @@ var Form = (function () {
     };
     return Form;
 }());
+alert('samundra kc ');
