@@ -4,4 +4,6 @@ bin/
 public/
 routes/
 views/
+dist/
+.idea/
 app.js
