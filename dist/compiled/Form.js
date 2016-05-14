@@ -64,6 +64,8 @@ var Form = (function () {
         this.placeTheForm(form);
         this.buildChilds();
         this.attachEvents();
+        if (!this.$name)
+            return console.error('No Form attributes has been provided');
         document.forms[this.$name].onsubmit = function (event) {
             var inputValues = {};
             for (var key in _this.$validator) {
@@ -283,16 +285,14 @@ var Form = (function () {
         this.$form.innerHTML = this.$form.innerHTML + submitButton;
     };
     Form.prototype.buildForm = function () {
-        var form = document.createElement("Form");
-        form.onfocus = function (evt) {
-            console.log(evt);
-        };
+        var form = document.createElement("form");
         if (this.$formOptions === undefined)
-            return;
+            return console.error("Form options are not setup");
         if (this.$formOptions.hasOwnProperty('attribute')) {
             if (typeof this.$formOptions.attribute === 'object') {
+                this.$name = this.$formOptions.attribute.name || "form_" + Date.now();
+                this.$formOptions.attribute['name'] = this.$name;
                 this.setAttributes(this.$formOptions.attribute, form);
-                this.$name = this.$formOptions.attribute.name || Date.now();
             }
         }
         this.$form = form;
@@ -345,36 +345,9 @@ var Form = (function () {
             else {
                 errorLabelContainer.style.display = 'none';
                 errorLabelContainer.firstChild.innerHTML = '';
-                document.forms[this.$name]['submit'].disabled = false;
-                return true;
+                document.forms[this.$];
             }
         }
-        return true;
-    };
-    Form.prototype.attachEvents = function () {
-        var _this = this;
-        var events = ['onkeyup', 'onkeydown', 'onmouseover', 'onmousedown', 'onclick', 'onfocus', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmousewheel'];
-        var __this = this;
-        this.$inputFieldsName.forEach(function (item) {
-            document.forms[_this.$name][item]['onblur'] = function (event) {
-                _this.validationWatcher({
-                    emitter: item,
-                    value: document.forms[__this.$name][item].value,
-                    event: event
-                });
-            };
-            events.forEach(function (eventType) {
-                document.forms[_this.$name][item][eventType] = function (event) {
-                    __this.observer({
-                        eventType: eventType,
-                        emitter: item,
-                        form: __this.$name,
-                        value: document.forms[__this.$name][item].value,
-                        event: event
-                    });
-                };
-            });
-        });
     };
     return Form;
 }());
