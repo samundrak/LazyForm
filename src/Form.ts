@@ -61,7 +61,6 @@ class Form {
 		this.placeTheForm(form);
 		this.buildChilds();
 		this.attachEvents();
-		console.log(this.$name)
 		if (!this.$name) return console.error('No Form attributes has been provided');
 		document.forms[this.$name].onsubmit = event => {
 			var inputValues = {};
@@ -362,4 +361,3 @@ class Form {
 		});
 	}
 }
-alert('samundra kc ')
