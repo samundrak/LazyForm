@@ -57,7 +57,7 @@ var Form = (function () {
     Form.prototype.create = function (fields) {
         var _this = this;
         if (!this.$formOptions) {
-            console.warn("Form options must be set, to set form options you can call set$formOptions method");
+            console.warn(Constant.error.noFormOptions);
             return;
         }
         var form = this.buildForm();
@@ -65,7 +65,9 @@ var Form = (function () {
         this.buildChilds();
         this.attachEvents();
         if (!this.$name)
-            return console.error('No Form attributes has been provided');
+            return console.error(Constant.error.noFormAttr);
+        if (!document.forms[this.$name])
+            return console.error(Constant.error.noFormContainer);
         document.forms[this.$name].onsubmit = function (event) {
             var inputValues = {};
             for (var key in _this.$validator) {
@@ -178,6 +180,8 @@ var Form = (function () {
                         var field = _this.createFields(key, item);
                         if (item.before)
                             tempElement.appendChild(_this.createElements(item.before));
+                        if (!field.template)
+                            return console.error(Constant.error.noTemplate);
                         tempElement.appendChild(field.input);
                         if (_this.$formOptions.fields.validationElement) {
                             if (item.attr.type != 'submit' && item.attr.type != 'Submit') {
@@ -356,6 +360,8 @@ var Form = (function () {
         var events = ['onkeyup', 'onkeydown', 'onmouseover', 'onmousedown', 'onclick', 'onfocus', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmousewheel'];
         var __this = this;
         this.$inputFieldsName.forEach(function (item) {
+            if (!document.forms[_this.$name])
+                return console.warn(Constant.error.noFormAttr);
             document.forms[_this.$name][item]['onblur'] = function (event) {
                 _this.validationWatcher({
                     emitter: item,
