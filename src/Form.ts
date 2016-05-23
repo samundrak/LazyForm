@@ -54,14 +54,15 @@ class Form {
 	}
 	create(fields: any): void {
 		if (!this.$formOptions) {
-			console.warn("Form options must be set, to set form options you can call set$formOptions method");
+			console.warn(Constant.error.noFormOptions);
 			return;
 		}
 		var form = this.buildForm();
 		this.placeTheForm(form);
 		this.buildChilds();
 		this.attachEvents();
-		if (!this.$name) return console.error('No Form attributes has been provided');
+		if (!this.$name) return console.error(Constant.error.noFormAttr);
+		if (!document.forms[this.$name]) return console.error(Constant.error.noFormContainer);
 		document.forms[this.$name].onsubmit = event => {
 			var inputValues = {};
 			for(var key in this.$validator){
@@ -159,6 +160,7 @@ class Form {
 		var __this = this;
 		for (var key in this.$formOptions.fields.fields) {
 			// var field = document.createElement("input");
+
 			switch (key) {
 				case 'textarea':
 				case 'input':
@@ -167,6 +169,7 @@ class Form {
 						var tempElement = document.createElement('temp');
 						var field = this.createFields(key, item);
 						if(item.before) tempElement.appendChild(this.createElements(item.before));
+						if (!field.template) return console.error(Constant.error.noTemplate);
 						tempElement.appendChild(field.input);
 						if (this.$formOptions.fields.validationElement) {
 							if (item.attr.type != 'submit' && item.attr.type != 'Submit'){
@@ -339,6 +342,7 @@ class Form {
 		var events = ['onkeyup', 'onkeydown', 'onmouseover', 'onmousedown', 'onclick', 'onfocus', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmousewheel'];
 		var __this = this;
 		this.$inputFieldsName.forEach( item => {
+			if (!document.forms[this.$name]) return console.warn(Constant.error.noFormAttr);
 			document.forms[this.$name][item]['onblur'] = event => {
 				this.validationWatcher({
 					emitter:item,
